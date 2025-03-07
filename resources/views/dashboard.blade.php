@@ -15,3 +15,13 @@
         </div>
     </div>
 </x-app-layout>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Dashboard</title>
+</head>
+<body>
+    <h1>Task Manager Dashboard</h1>
+    <!-- Add your dashboard content here -->
+</body>
+</html>

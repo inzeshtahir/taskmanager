@@ -2,64 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Task;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Show the Task Manager homepage
     public function index()
     {
-        //
+        return view('tasks.index');  // Ensure this matches the correct view path
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // Show the Task Manager dashboard
+    public function dashboard()
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Task $task)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Task $task)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Task $task)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Task $task)
-    {
-        //
+        return view('tasks.dashboard');  // Ensure this view exists as well
     }
 }
