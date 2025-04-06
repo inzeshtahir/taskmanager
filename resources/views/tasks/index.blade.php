@@ -29,70 +29,29 @@
                         <div class="card-body">
                             <h5 class="card-title d-flex justify-content-between align-items-center">
                                 <span>{{ $task->name }}</span>
-                                @if ($dueSoon && $task->status !== 'Completed')
-                                    <span class="badge bg-danger">⏰ Due Soon</span>
-                                @endif
-                            </h5>
-
-                            <p class="mb-1 text-muted">
-                                <strong>Due:</strong> {{ $task->due_date ? \Carbon\Carbon::parse($task->due_date)->format('M d, Y') : 'N/A' }}
-                            </p>
-
-                            @if ($task->description)
-                                <p>{{ $task->description }}</p>
-                            @endif
-
-                            @if ($task->photo)
-                                <img src="{{ asset('storage/' . $task->photo) }}" class="img-fluid rounded mb-2" style="max-height: 150px;">
-                            @endif
-
-                            <div class="mb-3">
-                                <span class="badge bg-secondary me-2">{{ $task->priority }}</span>
-                                <span class="badge bg-{{ 
-                                    $task->status === 'Completed' ? 'success' : 
-                                    ($task->status === 'Pending' ? 'warning' : 'danger') 
-                                }}">{{ $task->status }}</span>
-                            </div>
-
-                            @if ($task->subtasks->count())
-                                <ul class="list-group list-group-flush mb-3">
-                                    @foreach ($task->subtasks as $sub)
-                                        <li class="list-group-item">
-                                            <input type="checkbox" disabled {{ $sub->is_done ? 'checked' : '' }}> {{ $sub->title }}
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            {{-- Action Buttons --}}
-                            <div class="d-flex flex-wrap gap-2">
-                                @if ($task->status !== 'Completed')
-                                    <form action="{{ route('tasks.markCompleted', $task->id) }}" method="POST">
+                                <span class="badge 
+                                    @if($task->status === 'Completed') bg-success
+                                    @elseif($task->status === 'Pending') bg-warning
+                                    @else bg-danger
+                                    @endif">
+                                    {{ ucfirst($task->status) }}
+                                </span>
+                                <div class="d-flex">
+                                    <a href="{{ route('tasks.edit', $task->id) }}" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                                    <form action="{{ route('tasks.destroy', $task->id) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
                                         <button class="btn btn-outline-success btn-sm">✔ Done</button>
                                     </form>
-                                @endif
-
-                                <a href="{{ route('tasks.edit', $task->id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
-
-                                <a href="{{ route('tasks.show', $task->id) }}" class="btn btn-outline-primary btn-sm">View</a>
-
-                                <form action="{{ route('tasks.destroy', $task->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-outline-danger btn-sm">Delete</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="alert alert-info">No tasks found. <a href="{{ route('tasks.create') }}">Create one</a>.</div>
+                @endif
+            </div>
         </div>
-    @else
-        <div class="alert alert-info text-center">
-            You have no tasks yet. <a href="{{ route('tasks.create') }}" class="alert-link">Create one</a>.
-        </div>
-    @endif
+    </div>
 </div>
 @endsection
