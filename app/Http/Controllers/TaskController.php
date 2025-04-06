@@ -4,42 +4,122 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; // ✅ Import Log
 use App\Models\Task;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
+    public function index(Request $request)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Please log in to view your tasks.');
+        }
+    
+        $query = Task::where('user_id', Auth::id());
+    
+        // Apply filters
+        $filter = $request->query('filter');
+    
+        if ($filter === 'today') {
+            $query->whereDate('due_date', Carbon::today());
+        } elseif ($filter === 'week') {
+            $query->whereBetween('due_date', [
+                Carbon::now()->startOfWeek(Carbon::MONDAY),
+                Carbon::now()->endOfWeek(Carbon::SUNDAY)
+            ]);
+        }
+    
+        $tasks = $query->orderBy('position')->get();
+    
+        return view('tasks.index', compact('tasks'));
+    }
+    
+
+    public function create()
+    {
+        return view('tasks.create');
+    }
+
     public function store(Request $request)
     {
-        // Ensure user is logged in before storing a task
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'You must be logged in to add tasks.');
-        }
-
-        // Get authenticated user ID
-        $userId = Auth::id();
-
-        // If user ID is null, prevent insertion
-        if (!$userId) {
-            return redirect()->route('login')->with('error', 'User authentication failed. Please log in again.');
-        }
-
-        // ✅ Debugging: Log user ID to confirm it's set
-        Log::info('User ID when creating task:', ['user_id' => $userId]);
-
-        // Validate input
         $request->validate([
             'name' => 'required|string|max:255',
             'status' => 'required|in:Pending,Completed,Overdue',
+            'due_date' => 'required|date',
+            'priority' => 'required|in:Low,Medium,High',
         ]);
 
-        // Create the task
         Task::create([
             'name' => $request->name,
             'status' => $request->status,
-            'user_id' => $userId, // ✅ Ensure this is NOT NULL
+            'due_date' => $request->due_date ?? now()->toDateString(),  // fallback to today if empty
+            'priority' => $request->priority,
+            'user_id' => Auth::id(),
+            'position' => Task::where('user_id', Auth::id())->max('position') + 1,
         ]);
 
         return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
     }
+
+    public function edit(Task $task)
+    {
+        if ($task->user_id !== Auth::id()) {
+            return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+        }
+
+        return view('tasks.edit', compact('task'));
+    }
+
+    public function update(Request $request, Task $task)
+    {
+        if ($task->user_id !== Auth::id()) {
+            return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'status' => 'required|in:Pending,Completed,Overdue',
+            'due_date' => 'nullable|date',
+            'priority' => 'required|in:Low,Medium,High',
+        ]);
+
+        $task->update([
+            'name' => $request->name,
+            'status' => $request->status,
+            'due_date' => $request->due_date,
+            'priority' => $request->priority,
+        ]);
+
+        return redirect()->route('tasks.index')->with('success', 'Task updated successfully.');
+    }
+
+    public function destroy(Task $task)
+    {
+        if ($task->user_id !== Auth::id()) {
+            return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+        }
+
+        $task->delete();
+        return redirect()->route('tasks.index')->with('success', 'Task deleted successfully.');
+    }
+    public function markCompleted(Task $task)
+{
+    if ($task->user_id !== Auth::id()) {
+        return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+    }
+
+    $task->update(['status' => 'Completed']);
+
+    return redirect()->route('tasks.index')->with('success', 'Task marked as completed.');
+}
+public function show(Task $task)
+{
+    if ($task->user_id !== Auth::id()) {
+        return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+    }
+
+    return view('tasks.show', compact('task'));
+}
+
+
 }

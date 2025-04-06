@@ -10,9 +10,14 @@ return new class extends Migration {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('status');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // ✅ Ensures `user_id` is a valid foreign key
+            $table->enum('status', ['Pending', 'Completed', 'Overdue']);
+            $table->date('due_date')->nullable(); // Due date
+            $table->enum('priority', ['Low', 'Medium', 'High'])->default('Medium'); // Priority
+            $table->unsignedBigInteger('user_id');
+            $table->integer('position')->default(0); // For ordering
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
