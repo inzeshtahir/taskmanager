@@ -78,6 +78,17 @@
         </main>
     </div>
      <!-- Footer -->
+     <footer class="text-center py-3 mt-5 bg-dark text-white">
+    <small>
+       <!-- FontAwesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+        <a href="https://github.com/inzeshtahir/taskmanager.git" target="_blank" class="text-info text-decoration-underline">
+            <i class="fab fa-github"></i> GitHub
+        </a>
+    </small>
+</footer>
+
      <footer class="footer text-center mt-5">
         <div class="container">
             <span>Made using Laravel & Bootstrap</span>
@@ -94,4 +105,5 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+@stack('scripts')
 </html>

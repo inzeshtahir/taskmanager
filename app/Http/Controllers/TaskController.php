@@ -14,26 +14,33 @@ class TaskController extends Controller
         if (!Auth::check()) {
             return redirect()->route('login')->with('error', 'Please log in to view your tasks.');
         }
-    
+
         $query = Task::where('user_id', Auth::id());
-    
-        // Apply filters
+
+        // 🔍 Apply search filter
+        if ($request->has('search') && $request->search !== null) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('description', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // 📅 Apply date filters
         $filter = $request->query('filter');
-    
         if ($filter === 'today') {
-            $query->whereDate('due_date', Carbon::today());
+            $query->whereDate('created_at', Carbon::today());
         } elseif ($filter === 'week') {
-            $query->whereBetween('due_date', [
+            $query->whereBetween('created_at', [
                 Carbon::now()->startOfWeek(Carbon::MONDAY),
                 Carbon::now()->endOfWeek(Carbon::SUNDAY)
             ]);
         }
-    
-        $tasks = $query->orderBy('position')->get();
-    
+
+        $tasks = $query->orderBy('created_at', 'desc')->get();
+
         return view('tasks.index', compact('tasks'));
     }
-    
 
     public function create()
     {
@@ -52,7 +59,7 @@ class TaskController extends Controller
         Task::create([
             'name' => $request->name,
             'status' => $request->status,
-            'due_date' => $request->due_date ?? now()->toDateString(),  // fallback to today if empty
+            'due_date' => $request->due_date ?? now()->toDateString(),
             'priority' => $request->priority,
             'user_id' => Auth::id(),
             'position' => Task::where('user_id', Auth::id())->max('position') + 1,
@@ -100,26 +107,39 @@ class TaskController extends Controller
         }
 
         $task->delete();
+
         return redirect()->route('tasks.index')->with('success', 'Task deleted successfully.');
     }
+
     public function markCompleted(Task $task)
-{
-    if ($task->user_id !== Auth::id()) {
-        return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+    {
+        if ($task->user_id !== Auth::id()) {
+            return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+        }
+
+        $task->update(['status' => 'Completed']);
+
+        return redirect()->route('tasks.index')->with('success', 'Task marked as completed.');
     }
 
-    $task->update(['status' => 'Completed']);
+    public function show(Task $task)
+    {
+        if ($task->user_id !== Auth::id()) {
+            return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+        }
 
-    return redirect()->route('tasks.index')->with('success', 'Task marked as completed.');
-}
-public function show(Task $task)
-{
-    if ($task->user_id !== Auth::id()) {
-        return redirect()->route('tasks.index')->with('error', 'Unauthorized');
+        return view('tasks.show', compact('task'));
     }
+    public function searchSuggestions(Request $request)
+{
+    $keyword = $request->input('query');
 
-    return view('tasks.show', compact('task'));
+    $tasks = Task::where('user_id', Auth::id())
+        ->where('name', 'like', '%' . $keyword . '%')
+        ->limit(5)
+        ->get();
+
+    return response()->json($tasks);
 }
-
 
 }

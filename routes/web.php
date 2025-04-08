@@ -12,11 +12,10 @@ Route::get('/', function () {
 });
 
 
-
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::get('/tasks/search/suggestions', [TaskController::class, 'searchSuggestions'])->name('tasks.searchSuggestions');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-
 Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
 Route::post('/register', [RegisteredUserController::class, 'store']);
 
@@ -32,4 +31,3 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
 });
-

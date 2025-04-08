@@ -14,11 +14,19 @@
         </div>
     </div>
 
+    {{-- 🔍 Search Bar --}}
+    <form method="GET" action="{{ route('tasks.index') }}" class="d-flex mb-4" role="search">
+        <input type="text" name="search" class="form-control me-2" placeholder="Search your tasks..." value="{{ request('search') }}">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+
     @if ($tasks->count())
         <div class="row row-cols-1 g-4">
             @foreach ($tasks as $task)
                 @php
-                    $dueSoon = $task->due_date && \Carbon\Carbon::parse($task->due_date)->diffInHours(now()) <= 24;
+                    $dueSoon = $task->due_date 
+                        && \Carbon\Carbon::parse($task->due_date)->isFuture()
+                        && \Carbon\Carbon::parse($task->due_date)->diffInHours(now()) <= 24;
                 @endphp
 
                 <div class="col">
@@ -58,13 +66,14 @@
                                 <ul class="list-group list-group-flush mb-3">
                                     @foreach ($task->subtasks as $sub)
                                         <li class="list-group-item">
-                                            <input type="checkbox" disabled {{ $sub->is_done ? 'checked' : '' }}> {{ $sub->title }}
+                                            <input type="checkbox" disabled {{ $sub->is_done ? 'checked' : '' }}>
+                                            {{ $sub->title }}
                                         </li>
                                     @endforeach
                                 </ul>
                             @endif
 
-                            {{-- Action Buttons --}}
+                            {{-- ✅ Action Buttons --}}
                             <div class="d-flex flex-wrap gap-2">
                                 @if ($task->status !== 'Completed')
                                     <form action="{{ route('tasks.markCompleted', $task->id) }}" method="POST">
@@ -75,6 +84,8 @@
                                 @endif
 
                                 <a href="{{ route('tasks.edit', $task->id) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+
+                                <a href="{{ route('tasks.show', $task->id) }}" class="btn btn-outline-primary btn-sm">View</a>
 
                                 <form action="{{ route('tasks.destroy', $task->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                                     @csrf
@@ -94,3 +105,46 @@
     @endif
 </div>
 @endsection
+@push('scripts')
+<script>
+    const searchInput = document.getElementById('search-input');
+    const suggestionBox = document.getElementById('search-suggestions');
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value;
+
+        if (query.length === 0) {
+            suggestionBox.innerHTML = '';
+            suggestionBox.style.display = 'none';
+            return;
+        }
+
+        fetch(`{{ route('tasks.searchSuggestions') }}?query=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                suggestionBox.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(task => {
+                        const li = document.createElement('li');
+                        li.classList.add('list-group-item', 'list-group-item-action');
+                        li.textContent = task.name;
+                        li.onclick = () => {
+                            window.location.href = `/tasks/${task.id}`; // assuming 'show' route
+                        };
+                        suggestionBox.appendChild(li);
+                    });
+                    suggestionBox.style.display = 'block';
+                } else {
+                    suggestionBox.innerHTML = '<li class="list-group-item text-muted">No results</li>';
+                    suggestionBox.style.display = 'block';
+                }
+            });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestionBox.contains(e.target)) {
+            suggestionBox.style.display = 'none';
+        }
+    });
+</script>
+@endpush
