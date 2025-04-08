@@ -11,6 +11,13 @@ Route::get('/', function () {
     return Auth::check() ? redirect()->route('tasks.index') : redirect()->route('login');
 });
 
+Route::post('/toggle-theme', function () {
+    $current = session('theme', 'light');
+    session(['theme' => $current === 'dark' ? 'light' : 'dark']);
+    return back();
+})->name('toggle.theme');
+
+
 
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
